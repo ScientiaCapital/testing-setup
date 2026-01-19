@@ -1,0 +1,273 @@
+# GitHub Actions Workflow: E2E Testing with Playwright
+#
+# This workflow runs end-to-end tests using Playwright.
+# Copy to .github/workflows/e2e.yml in your project.
+#
+# Features:
+# - Multi-browser testing (Chromium, Firefox, WebKit)
+# - Screenshot and video capture on failure
+# - HTML report generation
+# - Parallel test execution with sharding
+# - Database seeding support
+# - Preview/staging environment testing
+
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  # Run E2E tests on schedule (e.g., nightly)
+  schedule:
+    - cron: '0 6 * * *'  # Run at 6 AM UTC daily
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to test against'
+        required: false
+        default: 'http://localhost:3000'
+      browser:
+        description: 'Browser to test'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - chromium
+          - firefox
+          - webkit
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Default base URL (overridden by input or deployment)
+  PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:3000' }}
+
+jobs:
+  # -----------------------------------------------------------------
+  # Run E2E Tests
+  # -----------------------------------------------------------------
+  e2e:
+    name: E2E Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Use sharding for parallel execution
+        shard: [1, 2, 3, 4]
+        browser: [chromium]
+        include:
+          # Add other browsers as separate jobs (not sharded)
+          - browser: firefox
+            shard: 1
+          - browser: webkit
+            shard: 1
+
+    services:
+      # Optional: Add database for E2E tests
+      # postgres:
+      #   image: postgres:15
+      #   env:
+      #     POSTGRES_USER: test
+      #     POSTGRES_PASSWORD: test
+      #     POSTGRES_DB: test_db
+      #   ports:
+      #     - 5432:5432
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      # Optional: Seed database before tests
+      # - name: Seed test database
+      #   run: pnpm db:seed:test
+      #   env:
+      #     DATABASE_URL: postgres://test:test@localhost:5432/test_db
+
+      # Start the development server
+      - name: Build application
+        run: pnpm build
+        env:
+          # Add build-time environment variables
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Run E2E tests
+        run: |
+          pnpm exec playwright test \
+            --project=${{ matrix.browser }} \
+            --shard=${{ matrix.shard }}/${{ strategy.job-total || 4 }} \
+            --reporter=html,github
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ env.PLAYWRIGHT_BASE_URL }}
+          # Runtime environment variables
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}-${{ matrix.shard }}
+          path: test-results/**/*.png
+          retention-days: 7
+
+  # -----------------------------------------------------------------
+  # Merge Reports (after all shards complete)
+  # -----------------------------------------------------------------
+  merge-reports:
+    name: Merge E2E Reports
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-*
+          path: all-reports
+
+      - name: Merge reports
+        run: |
+          pnpm exec playwright merge-reports --reporter html all-reports/*
+        continue-on-error: true
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged
+          path: playwright-report/
+          retention-days: 30
+
+  # -----------------------------------------------------------------
+  # E2E Against Preview/Staging Deployment
+  # -----------------------------------------------------------------
+  e2e-staging:
+    name: E2E Tests (Staging)
+    runs-on: ubuntu-latest
+    # Only run on main branch after deployment
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    # Wait for deployment to complete (if you have a deploy job)
+    # needs: deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for deployment
+        run: |
+          # Wait for deployment to be ready
+          for i in {1..30}; do
+            if curl -s -o /dev/null -w "%{http_code}" ${{ secrets.STAGING_URL || 'https://staging.example.com' }} | grep -q "200"; then
+              echo "Deployment is ready"
+              break
+            fi
+            echo "Waiting for deployment... (attempt $i)"
+            sleep 10
+          done
+
+      - name: Run E2E tests against staging
+        run: |
+          pnpm exec playwright test \
+            --project=chromium \
+            --reporter=html,github
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_URL || 'https://staging.example.com' }}
+
+      - name: Upload staging test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
+          path: playwright-report/
+          retention-days: 7
+
+  # -----------------------------------------------------------------
+  # Notify on Failure (optional)
+  # -----------------------------------------------------------------
+  # notify:
+  #   name: Notify on Failure
+  #   runs-on: ubuntu-latest
+  #   needs: [e2e, e2e-staging]
+  #   if: failure()
+  #
+  #   steps:
+  #     - name: Send Slack notification
+  #       uses: 8398a7/action-slack@v3
+  #       with:
+  #         status: failure
+  #         fields: repo,message,commit,author,action,eventName,ref,workflow
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

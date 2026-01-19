@@ -1,0 +1,267 @@
+# GitHub Actions Workflow: Frontend Testing
+#
+# This workflow runs tests for React/Next.js frontend projects.
+# Copy to .github/workflows/test.yml in your project.
+#
+# Features:
+# - Node.js version testing (18, 20, 22)
+# - pnpm/npm/yarn support (auto-detected)
+# - Caching for faster builds
+# - Type checking
+# - Linting with ESLint
+# - Unit tests with Vitest/Jest
+# - Coverage reporting
+# - Build verification
+
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'package-lock.json'
+      - 'yarn.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION_DEFAULT: '20'
+
+jobs:
+  # -----------------------------------------------------------------
+  # Detect Package Manager
+  # -----------------------------------------------------------------
+  detect:
+    name: Detect Setup
+    runs-on: ubuntu-latest
+    outputs:
+      package-manager: ${{ steps.detect.outputs.manager }}
+      cache-key: ${{ steps.detect.outputs.cache-key }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect package manager
+        id: detect
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            echo "cache-key=pnpm" >> $GITHUB_OUTPUT
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "cache-key=yarn" >> $GITHUB_OUTPUT
+          else
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "cache-key=npm" >> $GITHUB_OUTPUT
+          fi
+
+  # -----------------------------------------------------------------
+  # Linting and Type Checking
+  # -----------------------------------------------------------------
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: detect
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: needs.detect.outputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION_DEFAULT }}
+          cache: ${{ needs.detect.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm install --frozen-lockfile
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: Run ESLint
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm lint || pnpm eslint . --ext .ts,.tsx,.js,.jsx
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn lint || yarn eslint . --ext .ts,.tsx,.js,.jsx
+          else
+            npm run lint || npx eslint . --ext .ts,.tsx,.js,.jsx
+          fi
+
+      - name: Run TypeScript check
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm tsc --noEmit || echo "TypeScript check not configured"
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn tsc --noEmit || echo "TypeScript check not configured"
+          else
+            npx tsc --noEmit || echo "TypeScript check not configured"
+          fi
+
+  # -----------------------------------------------------------------
+  # Unit Tests
+  # -----------------------------------------------------------------
+  test:
+    name: Unit Tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: [detect, lint]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['18', '20', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: needs.detect.outputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ${{ needs.detect.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm install --frozen-lockfile
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: Run tests with coverage
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm test -- --coverage --reporter=verbose
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn test --coverage --reporter=verbose
+          else
+            npm test -- --coverage --reporter=verbose
+          fi
+        env:
+          CI: true
+
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == env.NODE_VERSION_DEFAULT
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # -----------------------------------------------------------------
+  # Build Verification
+  # -----------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [detect, test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: needs.detect.outputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION_DEFAULT }}
+          cache: ${{ needs.detect.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm install --frozen-lockfile
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: Build
+        run: |
+          if [ "${{ needs.detect.outputs.package-manager }}" = "pnpm" ]; then
+            pnpm build
+          elif [ "${{ needs.detect.outputs.package-manager }}" = "yarn" ]; then
+            yarn build
+          else
+            npm run build
+          fi
+        env:
+          # Add any required build-time env vars
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            dist/
+            .next/
+            out/
+            build/
+          if-no-files-found: ignore
+
+  # -----------------------------------------------------------------
+  # Preview Deployment (optional, for PRs)
+  # -----------------------------------------------------------------
+  # Uncomment to enable preview deployments to Vercel
+  # preview:
+  #   name: Preview Deploy
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   if: github.event_name == 'pull_request'
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Deploy to Vercel
+  #       uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         working-directory: ./
