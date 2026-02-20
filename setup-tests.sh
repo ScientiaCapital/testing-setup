@@ -188,9 +188,11 @@ copy_python_templates() {
 
     # Copy pytest.ini or create from pyproject.toml
     if [[ ! -f "${target}/pytest.ini" ]] && [[ ! -f "${target}/pyproject.toml" ]]; then
-        print_info "Creating pyproject.toml with test configuration..."
-        cp "${TEMPLATES_DIR}/python/pyproject.toml" "${target}/pyproject.toml"
-        print_success "Created pyproject.toml"
+        if [[ -f "${TEMPLATES_DIR}/python/pyproject.toml" ]]; then
+            print_info "Creating pyproject.toml with test configuration..."
+            cp "${TEMPLATES_DIR}/python/pyproject.toml" "${target}/pyproject.toml"
+            print_success "Created pyproject.toml"
+        fi
     elif [[ -f "${target}/pyproject.toml" ]]; then
         print_warning "pyproject.toml exists - please add pytest config manually from templates/python/pyproject.toml"
     fi
@@ -205,8 +207,10 @@ copy_python_templates() {
 
     # Copy Supabase integration test example
     if [[ ! -f "${target}/tests/integration/test_supabase.py" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/python/tests/integration/test_supabase.py" "${target}/tests/integration/test_supabase.py"
-        print_success "Created tests/integration/test_supabase.py"
+        if [[ -f "${TEMPLATES_DIR}/python/tests/integration/test_supabase.py" ]]; then
+            cp "${TEMPLATES_DIR}/python/tests/integration/test_supabase.py" "${target}/tests/integration/test_supabase.py"
+            print_success "Created tests/integration/test_supabase.py"
+        fi
     fi
 
     # Create __init__.py files
@@ -234,31 +238,42 @@ copy_vite_templates() {
 
     # Copy vitest.config.ts
     if [[ ! -f "${target}/vitest.config.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/frontend/vitest.config.ts" "${target}/vitest.config.ts"
-        print_success "Created vitest.config.ts"
+        if [[ -f "${TEMPLATES_DIR}/frontend/vitest.config.ts" ]]; then
+            cp "${TEMPLATES_DIR}/frontend/vitest.config.ts" "${target}/vitest.config.ts"
+            print_success "Created vitest.config.ts"
+        fi
     else
         print_warning "vitest.config.ts exists - skipping"
     fi
 
     # Copy setup.ts
     if [[ ! -f "${target}/src/test/setup.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/frontend/src/test/setup.ts" "${target}/src/test/setup.ts"
-        print_success "Created src/test/setup.ts"
+        if [[ -f "${TEMPLATES_DIR}/frontend/src/test/setup.ts" ]]; then
+            cp "${TEMPLATES_DIR}/frontend/src/test/setup.ts" "${target}/src/test/setup.ts"
+            print_success "Created src/test/setup.ts"
+        fi
     fi
 
     # Copy utils.tsx
     if [[ ! -f "${target}/src/test/utils.tsx" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/frontend/src/test/utils.tsx" "${target}/src/test/utils.tsx"
-        print_success "Created src/test/utils.tsx"
+        if [[ -f "${TEMPLATES_DIR}/frontend/src/test/utils.tsx" ]]; then
+            cp "${TEMPLATES_DIR}/frontend/src/test/utils.tsx" "${target}/src/test/utils.tsx"
+            print_success "Created src/test/utils.tsx"
+        fi
     fi
 
     # Copy MSW mocks (optional)
     if [[ "$skip_msw" != "true" ]]; then
         mkdir -p "${target}/src/test/mocks"
         if [[ ! -f "${target}/src/test/mocks/handlers.ts" ]] || [[ "$force" == "true" ]]; then
-            cp "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" "${target}/src/test/mocks/handlers.ts"
-            cp "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" "${target}/src/test/mocks/server.ts"
-            print_success "Created MSW mocks (src/test/mocks/)"
+            if [[ -f "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" ]]; then
+                cp "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" "${target}/src/test/mocks/handlers.ts"
+                print_success "Created src/test/mocks/handlers.ts"
+            fi
+            if [[ -f "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" ]]; then
+                cp "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" "${target}/src/test/mocks/server.ts"
+                print_success "Created src/test/mocks/server.ts"
+            fi
         fi
     fi
 
@@ -281,34 +296,44 @@ copy_bun_templates() {
 
     # Copy bunfig.toml
     if [[ ! -f "${target}/bunfig.toml" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/bun/bunfig.toml" "${target}/bunfig.toml"
-        print_success "Created bunfig.toml"
+        if [[ -f "${TEMPLATES_DIR}/bun/bunfig.toml" ]]; then
+            cp "${TEMPLATES_DIR}/bun/bunfig.toml" "${target}/bunfig.toml"
+            print_success "Created bunfig.toml"
+        fi
     else
         print_warning "bunfig.toml exists - skipping"
     fi
 
     # Copy package.json (only if no existing one)
     if [[ ! -f "${target}/package.json" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/bun/package.json" "${target}/package.json"
-        print_success "Created package.json"
+        if [[ -f "${TEMPLATES_DIR}/bun/package.json" ]]; then
+            cp "${TEMPLATES_DIR}/bun/package.json" "${target}/package.json"
+            print_success "Created package.json"
+        fi
     else
         print_warning "package.json exists - please add bun test scripts manually"
     fi
 
     # Copy test files
     if [[ ! -f "${target}/tests/setup.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/bun/tests/setup.ts" "${target}/tests/setup.ts"
-        print_success "Created tests/setup.ts"
+        if [[ -f "${TEMPLATES_DIR}/bun/tests/setup.ts" ]]; then
+            cp "${TEMPLATES_DIR}/bun/tests/setup.ts" "${target}/tests/setup.ts"
+            print_success "Created tests/setup.ts"
+        fi
     fi
 
     if [[ ! -f "${target}/tests/utils.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/bun/tests/utils.ts" "${target}/tests/utils.ts"
-        print_success "Created tests/utils.ts"
+        if [[ -f "${TEMPLATES_DIR}/bun/tests/utils.ts" ]]; then
+            cp "${TEMPLATES_DIR}/bun/tests/utils.ts" "${target}/tests/utils.ts"
+            print_success "Created tests/utils.ts"
+        fi
     fi
 
     if [[ ! -f "${target}/tests/example.test.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/bun/tests/example.test.ts" "${target}/tests/example.test.ts"
-        print_success "Created tests/example.test.ts"
+        if [[ -f "${TEMPLATES_DIR}/bun/tests/example.test.ts" ]]; then
+            cp "${TEMPLATES_DIR}/bun/tests/example.test.ts" "${target}/tests/example.test.ts"
+            print_success "Created tests/example.test.ts"
+        fi
     fi
 
     echo ""
@@ -340,44 +365,62 @@ copy_nextjs_templates() {
     if [[ "$use_jest" == "true" ]]; then
         # Copy Jest config
         if [[ ! -f "${target}/jest.config.js" ]] || [[ "$force" == "true" ]]; then
-            cp "${TEMPLATES_DIR}/nextjs/jest.config.js" "${target}/jest.config.js"
-            print_success "Created jest.config.js"
+            if [[ -f "${TEMPLATES_DIR}/nextjs/jest.config.js" ]]; then
+                cp "${TEMPLATES_DIR}/nextjs/jest.config.js" "${target}/jest.config.js"
+                print_success "Created jest.config.js"
+            fi
         fi
     else
         # Copy Vitest config
         if [[ ! -f "${target}/vitest.config.ts" ]] || [[ "$force" == "true" ]]; then
-            cp "${TEMPLATES_DIR}/nextjs/vitest.config.ts" "${target}/vitest.config.ts"
-            print_success "Created vitest.config.ts"
+            if [[ -f "${TEMPLATES_DIR}/nextjs/vitest.config.ts" ]]; then
+                cp "${TEMPLATES_DIR}/nextjs/vitest.config.ts" "${target}/vitest.config.ts"
+                print_success "Created vitest.config.ts"
+            fi
         fi
     fi
 
     # Copy setup.ts
     if [[ ! -f "${target}/src/test/setup.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/nextjs/src/test/setup.ts" "${target}/src/test/setup.ts"
-        print_success "Created src/test/setup.ts"
+        if [[ -f "${TEMPLATES_DIR}/nextjs/src/test/setup.ts" ]]; then
+            cp "${TEMPLATES_DIR}/nextjs/src/test/setup.ts" "${target}/src/test/setup.ts"
+            print_success "Created src/test/setup.ts"
+        fi
     fi
 
     # Copy utils.tsx
     if [[ ! -f "${target}/src/test/utils.tsx" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/nextjs/src/test/utils.tsx" "${target}/src/test/utils.tsx"
-        print_success "Created src/test/utils.tsx"
+        if [[ -f "${TEMPLATES_DIR}/nextjs/src/test/utils.tsx" ]]; then
+            cp "${TEMPLATES_DIR}/nextjs/src/test/utils.tsx" "${target}/src/test/utils.tsx"
+            print_success "Created src/test/utils.tsx"
+        fi
     fi
 
     # Copy example tests
     mkdir -p "${target}/src/test/examples"
     if [[ ! -f "${target}/src/test/examples/api-route.test.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/nextjs/examples/api-route.test.ts" "${target}/src/test/examples/api-route.test.ts"
-        cp "${TEMPLATES_DIR}/nextjs/examples/page.test.tsx" "${target}/src/test/examples/page.test.tsx"
-        print_success "Created example tests in src/test/examples/"
+        if [[ -f "${TEMPLATES_DIR}/nextjs/examples/api-route.test.ts" ]]; then
+            cp "${TEMPLATES_DIR}/nextjs/examples/api-route.test.ts" "${target}/src/test/examples/api-route.test.ts"
+            print_success "Created src/test/examples/api-route.test.ts"
+        fi
+        if [[ -f "${TEMPLATES_DIR}/nextjs/examples/page.test.tsx" ]]; then
+            cp "${TEMPLATES_DIR}/nextjs/examples/page.test.tsx" "${target}/src/test/examples/page.test.tsx"
+            print_success "Created src/test/examples/page.test.tsx"
+        fi
     fi
 
     # Copy MSW mocks (optional)
     if [[ "$skip_msw" != "true" ]]; then
         mkdir -p "${target}/src/test/mocks"
         if [[ ! -f "${target}/src/test/mocks/handlers.ts" ]] || [[ "$force" == "true" ]]; then
-            cp "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" "${target}/src/test/mocks/handlers.ts"
-            cp "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" "${target}/src/test/mocks/server.ts"
-            print_success "Created MSW mocks"
+            if [[ -f "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" ]]; then
+                cp "${TEMPLATES_DIR}/frontend/src/test/mocks/handlers.ts" "${target}/src/test/mocks/handlers.ts"
+                print_success "Created src/test/mocks/handlers.ts"
+            fi
+            if [[ -f "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" ]]; then
+                cp "${TEMPLATES_DIR}/frontend/src/test/mocks/server.ts" "${target}/src/test/mocks/server.ts"
+                print_success "Created src/test/mocks/server.ts"
+            fi
         fi
     fi
 
@@ -406,22 +449,28 @@ copy_playwright_templates() {
 
     # Copy playwright.config.ts
     if [[ ! -f "${target}/playwright.config.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/playwright/playwright.config.ts" "${target}/playwright.config.ts"
-        print_success "Created playwright.config.ts"
+        if [[ -f "${TEMPLATES_DIR}/playwright/playwright.config.ts" ]]; then
+            cp "${TEMPLATES_DIR}/playwright/playwright.config.ts" "${target}/playwright.config.ts"
+            print_success "Created playwright.config.ts"
+        fi
     else
         print_warning "playwright.config.ts exists - skipping"
     fi
 
     # Copy example test
     if [[ ! -f "${target}/tests/example.spec.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/playwright/tests/example.spec.ts" "${target}/tests/example.spec.ts"
-        print_success "Created tests/example.spec.ts"
+        if [[ -f "${TEMPLATES_DIR}/playwright/tests/example.spec.ts" ]]; then
+            cp "${TEMPLATES_DIR}/playwright/tests/example.spec.ts" "${target}/tests/example.spec.ts"
+            print_success "Created tests/example.spec.ts"
+        fi
     fi
 
     # Copy db-seed fixture
     if [[ ! -f "${target}/fixtures/db-seed.ts" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/playwright/fixtures/db-seed.ts" "${target}/fixtures/db-seed.ts"
-        print_success "Created fixtures/db-seed.ts"
+        if [[ -f "${TEMPLATES_DIR}/playwright/fixtures/db-seed.ts" ]]; then
+            cp "${TEMPLATES_DIR}/playwright/fixtures/db-seed.ts" "${target}/fixtures/db-seed.ts"
+            print_success "Created fixtures/db-seed.ts"
+        fi
     fi
 
     echo ""
@@ -444,22 +493,28 @@ copy_ci_templates() {
     case "$project_type" in
         python)
             if [[ ! -f "${target}/.github/workflows/test.yml" ]] || [[ "$force" == "true" ]]; then
-                cp "${TEMPLATES_DIR}/ci/github-actions-python.yml" "${target}/.github/workflows/test.yml"
-                print_success "Created .github/workflows/test.yml (Python)"
+                if [[ -f "${TEMPLATES_DIR}/ci/github-actions-python.yml" ]]; then
+                    cp "${TEMPLATES_DIR}/ci/github-actions-python.yml" "${target}/.github/workflows/test.yml"
+                    print_success "Created .github/workflows/test.yml (Python)"
+                fi
             fi
             ;;
         vite|nextjs)
             if [[ ! -f "${target}/.github/workflows/test.yml" ]] || [[ "$force" == "true" ]]; then
-                cp "${TEMPLATES_DIR}/ci/github-actions-frontend.yml" "${target}/.github/workflows/test.yml"
-                print_success "Created .github/workflows/test.yml (Frontend)"
+                if [[ -f "${TEMPLATES_DIR}/ci/github-actions-frontend.yml" ]]; then
+                    cp "${TEMPLATES_DIR}/ci/github-actions-frontend.yml" "${target}/.github/workflows/test.yml"
+                    print_success "Created .github/workflows/test.yml (Frontend)"
+                fi
             fi
             ;;
     esac
 
     # Always offer E2E workflow
     if [[ ! -f "${target}/.github/workflows/e2e.yml" ]] || [[ "$force" == "true" ]]; then
-        cp "${TEMPLATES_DIR}/ci/github-actions-e2e.yml" "${target}/.github/workflows/e2e.yml"
-        print_success "Created .github/workflows/e2e.yml"
+        if [[ -f "${TEMPLATES_DIR}/ci/github-actions-e2e.yml" ]]; then
+            cp "${TEMPLATES_DIR}/ci/github-actions-e2e.yml" "${target}/.github/workflows/e2e.yml"
+            print_success "Created .github/workflows/e2e.yml"
+        fi
     fi
 }
 
