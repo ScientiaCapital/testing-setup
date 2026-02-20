@@ -1,7 +1,7 @@
 # Project Context: testing-setup
 
-**Last Updated:** 2026-02-20 (session 2 — end of day)
-**Status:** Active — Bun testing template added, observer workflow exercised
+**Last Updated:** 2026-02-20 (session 3 — end of day)
+**Status:** Active — File guards fixed, Bun CI template added, detection bug fixed, Bun examples added
 
 ---
 
@@ -15,15 +15,15 @@ Testing infrastructure templates and setup scripts for Python (pytest), Bun (bun
 |-----------|------|--------|-------|
 | Setup script | `setup-tests.sh` | Stable | Auto-detects Python, Bun, Vite, Next.js |
 | Python templates | `templates/python/` | Stable | pytest + asyncio |
-| Bun templates | `templates/bun/` | **New** | bun:test built-in runner |
+| Bun templates | `templates/bun/` | Stable | bun:test + HTTP server + SQLite examples |
 | Frontend templates | `templates/frontend/` | Stable | Vitest + Testing Library + MSW |
 | Next.js templates | `templates/nextjs/` | Stable | Vitest or Jest options |
 | Playwright templates | `templates/playwright/` | Stable | E2E with fixtures |
-| CI templates | `templates/ci/` | Stable | GitHub Actions workflows |
+| CI templates | `templates/ci/` | Updated | GitHub Actions: Python, Bun, Frontend, E2E |
 | Quick Start Guide | `QUICK_START.md` | Updated | Added Bun section |
 | Example files | Root (`*.test.tsx`, etc.) | Reference | Show patterns in action |
 | Workflow infra | `.claude/`, `CLAUDE.md` | Exercised | Dual-team observer — fully tested |
-| Feature contract | `.claude/contracts/bun-testing-template.md` | Complete | First real contract used |
+| Feature contracts | `.claude/contracts/` | Complete | bun-testing-template, bun-ci-template, bun-examples |
 
 ## Tech Stack
 
@@ -50,12 +50,13 @@ Testing infrastructure templates and setup scripts for Python (pytest), Bun (bun
 
 | Metric | Value |
 |--------|-------|
-| Sessions with observer active | 1 |
+| Sessions with observer active | 2 |
 | Total blockers found | 0 |
-| Total warnings found | 6 (2 from lite, 4 from full) |
-| Total warnings resolved | 5 (1 logging to backlog) |
-| Observer-lite runs | 1 (initial scan, 35 files) |
-| Observer-full runs | 2 (pre-implementation + final) |
+| Total warnings found | 9 (2 lite S2, 4 full S2, 3 full S3) |
+| Total warnings resolved | 8 |
+| Remaining warnings | 1 (bun.lock detection — backlog) |
+| Observer-lite runs | 2 (S2 initial, S3 initial) |
+| Observer-full runs | 3 (S2 pre+final, S3 pre-task-2) |
 
 ## Session Log — 2026-02-20 (Session 1: Infrastructure)
 
@@ -131,10 +132,46 @@ Testing infrastructure templates and setup scripts for Python (pytest), Bun (bun
 | setup-tests.sh detects Bun | PASS |
 | QUICK_START.md has Bun section | PASS |
 
+## Session Log — 2026-02-20 (Session 3: Hardening + Bun CI + Examples)
+
+### Completed
+- [x] **Task 1: Fix file guards** — Added `if [[ -f ... ]]` guards to ALL 27 cp commands in setup-tests.sh (was 7 unguarded, expanded to comprehensive coverage)
+- [x] **Task 2: Bun CI template** — Created `templates/ci/github-actions-bun.yml` (lint → test → build), added `bun)` case to `copy_ci_templates()`, updated QUICK_START.md
+- [x] **Task 3: Detection verification** — 7/7 dry-run scenarios PASS. Real copy test revealed critical bug: `detect_project_type()` debug echo polluted stdout, breaking all non-dry-run dispatches. Fixed by redirecting to stderr.
+- [x] **Task 4: Bun examples** — Created `http-server.test.ts` (Bun.serve() patterns) and `sqlite.test.ts` (bun:sqlite CRUD/transactions). Fixed observer-flagged issues: `require("fs")` → ESM import, unused imports in setup.ts.
+- [x] **Observer runs** — observer-lite (initial scan), observer-full (pre-task-2 with contract review)
+- [x] **Security sweep** — PASS (no secrets, no .env files)
+
+### Bug Discovery
+**Critical bug found during Task 3 verification:** `detect_project_type()` at line 106 echoed "Detecting project type..." to stdout. When captured via `$(detect_project_type "$target_dir")`, this text was prepended to the actual type ("Detecting project type...\nbun"), causing the `case` dispatch to silently fall through. This means **all non-dry-run copy operations were broken** since the function was written. Only dry-run mode worked because it exits before the case statement. Fixed by redirecting the echo to stderr (`>&2`).
+
+### Observer Findings Summary (Session 3)
+| Source | BLOCKERs | WARNINGs | INFOs |
+|--------|----------|----------|-------|
+| observer-lite (initial) | 0 | 2 | 3 |
+| observer-full (pre-task-2) | 0 | 3 | 4 |
+| Total unique | 0 | 5 | 7 |
+| Resolved during implementation | 0 | 5 | 2 |
+| Remaining (backlog) | 0 | 0 | 5 |
+
+### Remaining Observer Items (backlog)
+- [INFO] Root `vitest.config.ts` and `package.json` are duplicates of `templates/frontend/` counterparts
+- [INFO] Root `pyproject.toml` targets >=3.11 vs template >=3.10
+- [INFO] `conftest.py:68` has `import os` in commented-out example code
+- [INFO] `detect_project_type()` only checks `bun.lockb`, not `bun.lock` (Bun v1.1+ uses text lock file)
+- [INFO] `copy_ci_templates()` case branches lack inline comments describing which template is copied
+
+### Metrics
+- Files created: 5 (2 examples, 1 CI template, 2 contracts)
+- Files modified: 4 (setup-tests.sh, QUICK_START.md, example.test.ts, setup.ts)
+- Lines added: ~870
+- Commits: 4 (`b14df5e` guards, `3f78209` CI template, `79f1e07` detection fix, `a5911bc` examples)
+
 ## Next Priorities
 
-1. Add file existence guard to `setup-tests.sh:200` for `test_supabase.py` copy (WARNING from observer-lite)
-2. Consider symlinking or documenting root config duplicates (INFO from observer-lite)
-3. Add CI template for Bun projects (`templates/ci/github-actions-bun.yml`)
-4. Test `setup-tests.sh` Bun detection with a real Bun project
-5. Add more example tests for Bun (HTTP server testing, SQLite testing)
+1. Add `bun.lock` (text format) to `detect_project_type()` alongside `bun.lockb` (backlog from observer-full)
+2. Consider symlinking or documenting root config duplicates (`vitest.config.ts`, `package.json`)
+3. Add inline comments to `copy_ci_templates()` case branches
+4. Run HTTP server + SQLite tests with actual Bun runtime (Bun not installed on this machine)
+5. Add Next.js CI template variant (if needed)
+6. Add test coverage for `setup-tests.sh` (shell test framework or BATS)
