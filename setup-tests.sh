@@ -103,7 +103,7 @@ EOF
 detect_project_type() {
     local dir="$1"
 
-    echo "Detecting project type..."
+    echo "Detecting project type..." >&2
 
     # Check for Next.js
     if [[ -f "${dir}/next.config.js" ]] || [[ -f "${dir}/next.config.mjs" ]] || [[ -f "${dir}/next.config.ts" ]]; then
