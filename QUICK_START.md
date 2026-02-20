@@ -17,7 +17,7 @@ The fastest way to set up testing in any project:
 
 # Or run in the project directory
 cd /path/to/your/project
-/path/to/testing_setup/setup-tests.sh
+/path/to/testing-setup/setup-tests.sh
 
 # With CI/CD workflows
 ./setup-tests.sh -c /path/to/project
@@ -499,7 +499,7 @@ npx playwright show-report     # View HTML report
 ## Template Directory Structure
 
 ```
-testing_setup/
+testing-setup/
 ├── setup-tests.sh             # Automated setup script
 ├── QUICK_START.md             # This guide
 ├── templates/
