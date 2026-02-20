@@ -242,6 +242,11 @@ bun test tests/example.test.ts
 bun test --grep "async"
 ```
 
+### Additional Examples
+
+- `templates/bun/tests/http-server.test.ts` — Testing HTTP servers with `Bun.serve()` (GET, POST, PUT, DELETE, error handling)
+- `templates/bun/tests/sqlite.test.ts` — Testing SQLite with `bun:sqlite` (CRUD, prepared statements, transactions)
+
 ### Key Differences from Vitest/Jest
 
 | Feature | Bun | Vitest/Jest |
@@ -595,7 +600,9 @@ testing-setup/
 │   │   └── tests/
 │   │       ├── setup.ts
 │   │       ├── utils.ts
-│   │       └── example.test.ts
+│   │       ├── example.test.ts
+│   │       ├── http-server.test.ts
+│   │       └── sqlite.test.ts
 │   ├── nextjs/
 │   │   ├── vitest.config.ts
 │   │   ├── jest.config.js

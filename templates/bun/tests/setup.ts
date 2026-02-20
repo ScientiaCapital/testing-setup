@@ -12,7 +12,8 @@
  * for DOM — each test file gets a fresh module scope.
  */
 
-import { beforeAll, afterEach } from "bun:test";
+// Import lifecycle hooks as needed:
+// import { beforeAll, afterEach } from "bun:test";
 
 // =============================================================================
 // Environment Variables (test values)

@@ -13,6 +13,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll, mock } from "bun:test";
+import { unlinkSync } from "node:fs";
 
 // =============================================================================
 // Basic Tests
@@ -168,7 +169,6 @@ describe("Bun-specific", () => {
     expect(content).toBe("Hello from Bun!");
 
     // Cleanup
-    const { unlinkSync } = require("fs");
     unlinkSync(tempFile);
   });
 });
