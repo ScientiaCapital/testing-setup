@@ -499,6 +499,14 @@ copy_ci_templates() {
                 fi
             fi
             ;;
+        bun)
+            if [[ ! -f "${target}/.github/workflows/test.yml" ]] || [[ "$force" == "true" ]]; then
+                if [[ -f "${TEMPLATES_DIR}/ci/github-actions-bun.yml" ]]; then
+                    cp "${TEMPLATES_DIR}/ci/github-actions-bun.yml" "${target}/.github/workflows/test.yml"
+                    print_success "Created .github/workflows/test.yml (Bun)"
+                fi
+            fi
+            ;;
         vite|nextjs)
             if [[ ! -f "${target}/.github/workflows/test.yml" ]] || [[ "$force" == "true" ]]; then
                 if [[ -f "${TEMPLATES_DIR}/ci/github-actions-frontend.yml" ]]; then

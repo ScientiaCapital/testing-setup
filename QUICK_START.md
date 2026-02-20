@@ -400,6 +400,7 @@ mkdir -p .github/workflows
 
 Choose the appropriate workflow:
 - **Python**: `templates/ci/github-actions-python.yml` → `.github/workflows/test.yml`
+- **Bun**: `templates/ci/github-actions-bun.yml` → `.github/workflows/test.yml`
 - **Frontend**: `templates/ci/github-actions-frontend.yml` → `.github/workflows/test.yml`
 - **E2E**: `templates/ci/github-actions-e2e.yml` → `.github/workflows/e2e.yml`
 
@@ -419,6 +420,7 @@ Add these in GitHub → Settings → Secrets:
 ### Workflow Features
 
 - **Python workflow**: Multi-version testing (3.10-3.12), lint → test → integration → build
+- **Bun workflow**: TypeScript checking, bun:test with coverage, build verification
 - **Frontend workflow**: Auto-detects npm/yarn/pnpm, multi-Node testing (18-22)
 - **E2E workflow**: Multi-browser, sharding for parallel execution, screenshot capture
 
@@ -611,6 +613,7 @@ testing-setup/
 │   │       └── db-seed.ts
 │   └── ci/
 │       ├── github-actions-python.yml
+│       ├── github-actions-bun.yml
 │       ├── github-actions-frontend.yml
 │       └── github-actions-e2e.yml
 ```
