@@ -1,0 +1,16 @@
+{
+  "name": "your-bun-project",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+
+    "check": "bun run lint && bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0"
+  }
+}

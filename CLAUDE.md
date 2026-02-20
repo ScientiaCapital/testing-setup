@@ -57,6 +57,7 @@ If during work you hit ANY of these triggers, upgrade from Lite to Full:
 
 Provides ready-to-use testing configurations for:
 - Python (pytest + pytest-asyncio)
+- Bun (bun:test built-in runner)
 - React + Vite (Vitest + Testing Library + MSW)
 - Next.js (Vitest or Jest)
 - Playwright (E2E)
@@ -77,6 +78,7 @@ testing-setup/
 ├── conftest.py                # Pytest fixtures template
 ├── templates/                 # Template files by framework
 │   ├── python/
+│   ├── bun/
 │   ├── frontend/
 │   ├── nextjs/
 │   ├── playwright/
@@ -103,6 +105,11 @@ testing-setup/
 pytest                          # Run all
 pytest --cov=src               # With coverage
 pytest -m "not integration"    # Unit only
+
+# Bun tests
+bun test                        # Run all
+bun test --coverage            # With coverage
+bun test --watch               # Watch mode
 
 # Frontend tests
 npm test                        # Run all

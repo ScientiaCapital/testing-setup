@@ -29,7 +29,7 @@ cd /path/to/your/project
 ./setup-tests.sh --help
 ```
 
-The script auto-detects your project type (Python, React+Vite, Next.js) and copies the appropriate templates.
+The script auto-detects your project type (Python, Bun, React+Vite, Next.js) and copies the appropriate templates.
 
 ---
 
@@ -191,6 +191,66 @@ expect(response.status).toBe(201)
 const { params } = createMockParams({ id: '123' })
 const response = await GET(request, { params })
 ```
+
+---
+
+## Bun Testing Setup
+
+Bun ships a **built-in test runner** — no Vitest or Jest needed. It's Jest-compatible, natively supports TypeScript, and runs tests significantly faster.
+
+### 1. Install Bun
+
+```bash
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Verify installation
+bun --version
+```
+
+### 2. Create Directory Structure
+
+```bash
+mkdir -p tests
+touch bunfig.toml tests/setup.ts tests/example.test.ts
+```
+
+### 3. Copy Template Files
+
+- `templates/bun/bunfig.toml` → project root
+- `templates/bun/package.json` → project root (or merge test scripts into existing)
+- `templates/bun/tests/setup.ts` → tests/
+- `templates/bun/tests/utils.ts` → tests/
+- `templates/bun/tests/example.test.ts` → tests/
+
+### 4. Run Tests
+
+```bash
+# Run all tests
+bun test
+
+# Watch mode (re-runs on file changes)
+bun test --watch
+
+# With coverage report
+bun test --coverage
+
+# Run specific file
+bun test tests/example.test.ts
+
+# Run matching tests
+bun test --grep "async"
+```
+
+### Key Differences from Vitest/Jest
+
+| Feature | Bun | Vitest/Jest |
+|---------|-----|-------------|
+| Config file | `bunfig.toml` | `vitest.config.ts` / `jest.config.js` |
+| Test import | `import { test } from "bun:test"` | `import { test } from "vitest"` |
+| DOM env | `happy-dom` (manual setup) | `jsdom` (via config) |
+| Coverage | `--coverage` flag (built-in) | `@vitest/coverage-v8` package |
+| Speed | Native, very fast | Fast (Vitest) / Moderate (Jest) |
 
 ---
 
@@ -466,6 +526,16 @@ pytest -n auto                  # Parallel execution
 pytest -m "not integration"    # Skip slow tests
 ```
 
+### Bun
+```bash
+bun test                        # Run all tests
+bun test --watch               # Watch mode
+bun test --coverage            # Coverage report
+bun test tests/example         # Run specific file
+bun test --grep "pattern"      # Run matching tests
+bun test --timeout 30000       # Custom timeout
+```
+
 ### Frontend (Vitest)
 ```bash
 npm test                        # Run all tests
@@ -517,6 +587,13 @@ testing-setup/
 │   │       └── mocks/
 │   │           ├── handlers.ts
 │   │           └── server.ts
+│   ├── bun/
+│   │   ├── bunfig.toml
+│   │   ├── package.json
+│   │   └── tests/
+│   │       ├── setup.ts
+│   │       ├── utils.ts
+│   │       └── example.test.ts
 │   ├── nextjs/
 │   │   ├── vitest.config.ts
 │   │   ├── jest.config.js

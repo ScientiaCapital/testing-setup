@@ -1,0 +1,45 @@
+# =============================================================================
+# Bun Configuration (bunfig.toml)
+# =============================================================================
+#
+# Bun's configuration file for project settings, test runner, and package
+# management. Place this in your project root.
+#
+# Documentation: https://bun.sh/docs/runtime/bunfig
+# =============================================================================
+
+[test]
+
+# Test file patterns
+# Bun automatically finds files matching these patterns
+root = "."
+
+# Coverage reporting
+coverage = false       # Set to true for CI
+coverageReporter = ["text", "lcov"]
+
+# Timeout per test (in ms)
+timeout = 10000
+
+# Bail after N failures (0 = don't bail)
+bail = 0
+
+# Rerun tests on file changes
+# watch = true         # Uncomment for development
+
+# Preload setup files before running tests
+preload = ["./tests/setup.ts"]
+
+# =============================================================================
+# Install configuration
+# =============================================================================
+
+[install]
+
+# Use exact versions by default (reproducible builds)
+exact = true
+
+[install.lockfile]
+
+# Save lockfile
+save = true

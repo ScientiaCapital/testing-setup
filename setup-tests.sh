@@ -17,6 +17,7 @@
 #
 # Supported Project Types:
 #   - Python (pyproject.toml, setup.py, requirements.txt)
+#   - Bun (bunfig.toml, bun.lockb)
 #   - React + Vite (vite.config.ts)
 #   - Next.js (next.config.js, next.config.mjs)
 #   - Full-stack (both Python backend and frontend)
@@ -75,7 +76,7 @@ OPTIONS:
     -h, --help          Show this help message
     -f, --force         Overwrite existing files
     -n, --dry-run       Show what would be done without making changes
-    -t, --type TYPE     Force project type (python|vite|nextjs|e2e)
+    -t, --type TYPE     Force project type (python|bun|vite|nextjs|e2e)
     -c, --ci            Also setup CI/CD workflows
     --no-msw            Skip MSW setup for frontend projects
 
@@ -87,6 +88,7 @@ EXAMPLES:
 
 SUPPORTED PROJECT TYPES:
     python    Python projects (pytest, coverage, mypy)
+    bun       Bun projects (bun:test, built-in runner)
     vite      React + Vite projects (Vitest, Testing Library)
     nextjs    Next.js projects (Vitest or Jest, Testing Library)
     e2e       E2E testing only (Playwright)
@@ -106,6 +108,12 @@ detect_project_type() {
     # Check for Next.js
     if [[ -f "${dir}/next.config.js" ]] || [[ -f "${dir}/next.config.mjs" ]] || [[ -f "${dir}/next.config.ts" ]]; then
         echo "nextjs"
+        return
+    fi
+
+    # Check for Bun
+    if [[ -f "${dir}/bunfig.toml" ]] || [[ -f "${dir}/bun.lockb" ]]; then
+        echo "bun"
         return
     fi
 
@@ -259,6 +267,56 @@ copy_vite_templates() {
     echo "  1. Install dependencies: npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom msw"
     echo "  2. Add test script to package.json: \"test\": \"vitest\""
     echo "  3. Run tests: npm test"
+}
+
+copy_bun_templates() {
+    local target="$1"
+    local force="$2"
+
+    print_header "Setting up Bun Testing"
+
+    # Create tests directory
+    mkdir -p "${target}/tests"
+    print_success "Created tests directory"
+
+    # Copy bunfig.toml
+    if [[ ! -f "${target}/bunfig.toml" ]] || [[ "$force" == "true" ]]; then
+        cp "${TEMPLATES_DIR}/bun/bunfig.toml" "${target}/bunfig.toml"
+        print_success "Created bunfig.toml"
+    else
+        print_warning "bunfig.toml exists - skipping"
+    fi
+
+    # Copy package.json (only if no existing one)
+    if [[ ! -f "${target}/package.json" ]] || [[ "$force" == "true" ]]; then
+        cp "${TEMPLATES_DIR}/bun/package.json" "${target}/package.json"
+        print_success "Created package.json"
+    else
+        print_warning "package.json exists - please add bun test scripts manually"
+    fi
+
+    # Copy test files
+    if [[ ! -f "${target}/tests/setup.ts" ]] || [[ "$force" == "true" ]]; then
+        cp "${TEMPLATES_DIR}/bun/tests/setup.ts" "${target}/tests/setup.ts"
+        print_success "Created tests/setup.ts"
+    fi
+
+    if [[ ! -f "${target}/tests/utils.ts" ]] || [[ "$force" == "true" ]]; then
+        cp "${TEMPLATES_DIR}/bun/tests/utils.ts" "${target}/tests/utils.ts"
+        print_success "Created tests/utils.ts"
+    fi
+
+    if [[ ! -f "${target}/tests/example.test.ts" ]] || [[ "$force" == "true" ]]; then
+        cp "${TEMPLATES_DIR}/bun/tests/example.test.ts" "${target}/tests/example.test.ts"
+        print_success "Created tests/example.test.ts"
+    fi
+
+    echo ""
+    print_info "Next steps:"
+    echo "  1. Install Bun (if not installed): curl -fsSL https://bun.sh/install | bash"
+    echo "  2. Install dependencies: bun install"
+    echo "  3. Run tests: bun test"
+    echo "  4. Run with coverage: bun test --coverage"
 }
 
 copy_nextjs_templates() {
@@ -507,6 +565,9 @@ main() {
         python)
             copy_python_templates "$target_dir" "$force"
             ;;
+        bun)
+            copy_bun_templates "$target_dir" "$force"
+            ;;
         vite)
             copy_vite_templates "$target_dir" "$force" "$skip_msw"
             ;;
@@ -521,6 +582,7 @@ main() {
             echo ""
             echo "Please specify the type manually:"
             echo "  ./setup-tests.sh -t python     # For Python projects"
+            echo "  ./setup-tests.sh -t bun        # For Bun projects"
             echo "  ./setup-tests.sh -t vite       # For React + Vite"
             echo "  ./setup-tests.sh -t nextjs     # For Next.js"
             echo "  ./setup-tests.sh -t e2e        # For E2E testing only"
@@ -572,6 +634,9 @@ main() {
     case "$project_type" in
         python)
             echo "  pytest"
+            ;;
+        bun)
+            echo "  bun test"
             ;;
         vite|nextjs)
             echo "  npm test"
