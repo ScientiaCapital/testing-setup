@@ -11,3 +11,4 @@ Template project: Python pytest, Bun test, Vitest, Playwright; TypeScript + Vite
 - setup-tests.sh must auto-detect project type before applying templates
 - CI templates must use GitHub Actions matrix for multi-version testing
 - Keep template configs minimal — users extend them, not replace them
+- No OpenAI dependency in any template — use Anthropic Claude for any LLM integration
